@@ -1,0 +1,4 @@
+========== Transformer-LearnablePE [Test] ==========
+    Loss: 1.364190, DA: 0.5271, CI_95: 0.9111, RMSE: 35.4132
+========== Transformer-FixedPE [Test] ==========
+    Loss: 1.365564, DA: 0.5379, CI_95: 0.9233, RMSE: 35.4099

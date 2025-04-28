@@ -1,0 +1,8 @@
+========== CommodityTransformer | Lookback=3 [Test] ==========
+    Loss: 1.357669, DA: 0.5366, CI_95: 0.9002, RMSE: 35.8239
+========== CommodityTransformer | Lookback=6 [Test] ==========
+    Loss: 1.466317, DA: 0.5153, CI_95: 0.8649, RMSE: 35.7312
+========== CommodityTransformer | Lookback=12 [Test] ==========
+    Loss: 1.353806, DA: 0.5431, CI_95: 0.9219, RMSE: 35.2018
+========== CommodityTransformer | Lookback=24 [Test] ==========
+    Loss: 1.481481, DA: 0.5324, CI_95: 0.8954, RMSE: 36.6349

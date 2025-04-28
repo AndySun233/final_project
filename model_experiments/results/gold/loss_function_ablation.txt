@@ -1,0 +1,8 @@
+========== Transformer + NLL [Test] ==========
+    Loss: 1.576488, DA: 0.5037, CI_95: 0.7891, RMSE: 19.6872
+========== Transformer + FixedNu [Test] ==========
+    Loss: 1.475719, DA: 0.5141, CI_95: 0.7291, RMSE: 19.6573
+========== Transformer + CRPSOnly [Test] ==========
+    Loss: 0.570061, DA: 0.5253, CI_95: 0.8322, RMSE: 20.1834
+========== Transformer + CompLoss [Test] ==========
+    Loss: 1.800085, DA: 0.4888, CI_95: 0.8782, RMSE: 19.6661
