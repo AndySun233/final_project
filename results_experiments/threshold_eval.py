@@ -12,31 +12,35 @@ from models.tf_model import CommodityTransformer
 from models.lstm_model import LSTMStudentT
 from utils.dataset import TimeSeriesDataset
 
+"""
+Threshold-based Evaluation Runner
+
+- Evaluates trained models across different prediction confidence thresholds
+- Computes metrics: NLL, Directional Accuracy (DA), 95% Confidence Coverage, RMSE per threshold
+- Visualizes normalized metric trends over threshold values
+- Saves evaluation table and plot for gold and oil prediction models
+"""
+
+
 def compute_threshold_metrics(mu, sigma, nu, y_true, y_mean, y_std, thresholds=None):
-    """
-    计算不同阈值下的指标：Proportion, NLL, DA, 95% CR, RMSE
-    ✅ 加了反标准化，统一和训练时标准
-    """
+
     if thresholds is None:
         thresholds = np.arange(0.0, 2.5, 0.25)
 
     results = []
 
-    # 标准化域
     mu_std = mu.detach().cpu().numpy()
     sigma_std = sigma.detach().cpu().numpy()
     nu_std = nu.detach().cpu().numpy()
     y_true_std = y_true.detach().cpu().numpy()
 
-    # 反标准化域
     mu = mu_std * y_std + y_mean
     sigma = sigma_std * y_std
     y_true = y_true_std * y_std + y_mean
 
-    signal_strength = np.abs(y_true_std) / sigma_std  # ❗️ 注意，这里用标准化的signal strength筛选！
-
+    signal_strength = np.abs(y_true_std) / sigma_std  
     for t in thresholds:
-        mask = signal_strength >= t  # ✅ 改成 >=，保证threshold=0不漏样本
+        mask = signal_strength >= t 
         proportion = np.mean(mask)
 
         if np.sum(mask) == 0:
@@ -69,18 +73,13 @@ def compute_threshold_metrics(mu, sigma, nu, y_true, y_mean, y_std, thresholds=N
     return df
 
 def plot_threshold_metrics(df, save_path):
-    """
-    绘制标准化后的变化率曲线
-    每个指标都除以自己Threshold=0时的初始值
-    """
+
     import matplotlib.pyplot as plt
 
-    # === 标准化 ===
     df_norm = df.copy()
     for col in ["NLL", "DA", "95% CR", "RMSE"]:
         df_norm[col] = df[col] / df[col].iloc[0]  # 除以自己在threshold=0时候的数值
 
-    # === 开始画图 ===
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.set_xlabel("Threshold")
     ax.set_ylabel("Normalized Metric Value (relative to Threshold=0)")
@@ -99,9 +98,8 @@ def plot_threshold_metrics(df, save_path):
 
 
 def run_threshold_analysis(data_path, model_path, lookback=6, tag="gold"):
-    print(f"\n🚀 Running threshold analysis for {tag}")
+    print(f"\n Running threshold analysis for {tag}")
 
-    # === 1. 加载数据 ===
     df = pd.read_csv(data_path, index_col=0, parse_dates=True).dropna()
     test_len = int(len(df) * 0.2)
     train_df = df[:-test_len]
@@ -114,7 +112,6 @@ def run_threshold_analysis(data_path, model_path, lookback=6, tag="gold"):
 
     test_loader = DataLoader(ds_test, batch_size=128, shuffle=False)
 
-    # === 2. 加载模型 ===
     if "lstm" in tag.lower():
         model = LSTMStudentT(input_dim=ds_test.X.shape[2])
     elif "tf" in tag.lower():
@@ -125,7 +122,6 @@ def run_threshold_analysis(data_path, model_path, lookback=6, tag="gold"):
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    # === 3. 收集预测
     all_mu, all_sigma, all_nu, all_y = [], [], [], []
 
     with torch.no_grad():
@@ -142,21 +138,19 @@ def run_threshold_analysis(data_path, model_path, lookback=6, tag="gold"):
     nu = torch.cat(all_nu, dim=0)
     y_true = torch.cat(all_y, dim=0)
 
-    # === 4. 阈值分析
     df_metrics = compute_threshold_metrics(mu, sigma, nu, y_true, 
                                             y_mean=ds_train.y_mean.item(), 
                                             y_std=ds_train.y_std.item())
 
-    print("\n📊 Threshold-based Evaluation Table:")
+    print("\n Threshold-based Evaluation Table:")
     print(df_metrics.round(4))
 
-    # === 5. 保存结果
     save_dir = os.path.join("results_experiments", "results", tag)
     os.makedirs(save_dir, exist_ok=True)
 
     df_metrics.to_csv(os.path.join(save_dir, "threshold_eval_metrics.csv"), index=False)
     plot_threshold_metrics(df_metrics, save_path=os.path.join(save_dir, "threshold_eval_plot.png"))
-    print(f"✅ Results saved to {save_dir}")
+    print(f" Results saved to {save_dir}")
 
 if __name__ == "__main__":
     tasks = [

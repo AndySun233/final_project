@@ -30,7 +30,7 @@ def mean_variance_scaling(df, gamma=0.001):
     """
     variance = (df['sigma'] ** 2) * (df['nu'] / (df['nu'] - 2))
     positions = gamma * (df['mu'] / variance)
-    positions = positions.clip(-1, 1)  # Clip position between -1 and 1
+    positions = positions.clip(-1, 1)
     return positions
 
 def tail_risk_adjusted_confidence(df, gamma=0.01):
@@ -38,9 +38,9 @@ def tail_risk_adjusted_confidence(df, gamma=0.01):
     Tail-Risk Adjusted Confidence Trading:
     Positions scaled by mu, inversely by sigma and tail risk (nu).
     """
-    effective_nu = np.maximum(df['nu'], 2.1)  # 防止nu接近2
+    effective_nu = np.maximum(df['nu'], 2.1) 
     positions = gamma * (df['mu'] / (df['sigma'] * (effective_nu / (effective_nu - 2))))
-    positions = positions.clip(-1, 1)  # 仓位clip在[-1, 1]
+    positions = positions.clip(-1, 1) 
     return positions
 
 

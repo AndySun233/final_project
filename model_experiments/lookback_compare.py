@@ -10,6 +10,17 @@ from eval.evaluate import evaluate_plaintext
 from train.train_tf import train_model as train_tf
 from utils.seeds import set_seed
 
+
+"""
+Lookback Window Experiment Pipeline
+
+- Trains a Transformer model on gold and oil datasets with varying lookback window lengths
+- Uses a composite loss function for probabilistic forecasting (Student-t distribution)
+- Evaluates each model on a hold-out test set and compares results across lookback settings
+- Saves plain-text evaluation metrics (Loss, DA, CI_95, RMSE) for analysis
+"""
+
+
 def prepare_dataloader(csv_path, lookback):
     df = pd.read_csv(csv_path, index_col=0, parse_dates=True).dropna()
     train_df, test_df = train_test_split(df, test_size=0.2, shuffle=False)
@@ -44,10 +55,8 @@ def run_single_experiment(csv_path, save_dir, lookback, model_class, train_fn, r
         model=model_instance
     )
 
-    # 加载最优模型权重
     model.load_state_dict(torch.load(model_path))
 
-    # 测试集评估
     result = evaluate_plaintext(
         model=model,
         dataloader_test=test_loader,
@@ -76,13 +85,12 @@ if __name__ == "__main__":
                 csv_path=csv_path,
                 save_dir=save_dir,
                 lookback=lookback,
-                model_class=CommodityTransformer,  # 统一用 Transformer
+                model_class=CommodityTransformer,
                 train_fn=train_tf,
                 results_list=results_list
             )
 
-        # 保存结果
         output_file = os.path.join(save_dir, "lookback_compare.txt")
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n".join(results_list))
-        print(f"✅ 写入完成：{output_file}")
+        print(f"save to{output_file}")

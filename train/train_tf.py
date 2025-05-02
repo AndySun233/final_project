@@ -5,9 +5,6 @@ from losses.loss import nll_only
 def train_model(train_loader, input_dim, epochs=10, lr=1e-4,
                 model_path="tf/best.pt", loss_fn=nll_only,
                 model=None):
-    """
-    Transformer 训练函数，不使用验证集，按最小 train loss 保存模型
-    """
     if model is None:
         from models.tf_model import CommodityTransformer
         model = CommodityTransformer(input_dim=input_dim)
@@ -38,7 +35,7 @@ def train_model(train_loader, input_dim, epochs=10, lr=1e-4,
 
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     torch.save(best_model_state, model_path)
-    print(f"✅ 最佳模型已保存到 {model_path}")
+    print(f"best save to{model_path}")
 
     model.load_state_dict(torch.load(model_path))
     return model

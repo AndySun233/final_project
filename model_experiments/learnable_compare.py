@@ -9,6 +9,15 @@ from sklearn.model_selection import train_test_split
 import pandas as pd, torch, os
 from utils.seeds import set_seed
 
+"""
+Positional Encoding Ablation Experiment
+
+- Compares Transformer models with learnable vs. fixed positional encoding
+- Trains on gold and oil datasets with a fixed lookback window
+- Uses composite loss for probabilistic prediction
+- Evaluates models on a test set and logs plain-text metrics (Loss, DA, CI_95, RMSE)
+"""
+
 def run_experiment(data_path, model_class, train_fn, save_dir, model_tag, results_list):
     df = pd.read_csv(data_path, index_col=0, parse_dates=True).dropna()
     train_df, test_df = train_test_split(df, test_size=0.2, shuffle=False)
@@ -80,4 +89,4 @@ if __name__ == "__main__":
         result_path = os.path.join(save_dir, "positional_encoding_ablation.txt")
         with open(result_path, "w", encoding="utf-8") as f:
             f.write("\n".join(results_list))
-        print(f"✅ 写入完成：{result_path}")
+        print(f" save to:{result_path}")

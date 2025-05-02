@@ -7,24 +7,31 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from strategy_experiments.strategy import strategy_mapper
 
-# === 配置参数 ===
-INIT_CAPITAL = 1_000_000  # 初始资金
-FEE_RATE = 0.0001         # 0.01% 单边手续费
-SLIPPAGE_RATE = 0.0005    # 0.05% 单边滑点
+"""
+Backtesting Script
+
+- Runs backtest simulations on prediction CSV files using multiple trading strategies
+- Computes key performance metrics: total return, Sharpe ratio, max drawdown, win rate
+- Saves performance summary table and account value plot
+- Supports optional active trading hours filtering
+"""
+
+
+INIT_CAPITAL = 1_000_000  
+FEE_RATE = 0.0001        
+SLIPPAGE_RATE = 0.0005    
 MAX_EXPOSURE = 1        
 
-# === 核心回测函数 ===
 def run_backtest(pred_path, save_dir, model_tag, active_hours = None):
-    print(f"\n🚀 Running backtest for {model_tag}")
+    print(f"\n Running backtest for {model_tag}")
     os.makedirs(save_dir, exist_ok=True)
 
-    # 读取预测 + 市场数据 CSV
     df = pd.read_csv(pred_path, parse_dates=['timestamp'])
     
     if active_hours is not None:
-        df['hour'] = df['timestamp'].dt.hour  # 提取小时
+        df['hour'] = df['timestamp'].dt.hour 
         df = df[df['hour'].isin(active_hours)].reset_index(drop=True)
-        print(f"⏰ Trading restricted to hours: {active_hours}")
+        print(f"Trading restricted to hours: {active_hours}")
 
     strategy_grid = [
         ('buy_and_hold',              {}),

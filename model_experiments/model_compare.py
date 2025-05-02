@@ -3,7 +3,6 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-
 from train.train_lstm import train_model as train_lstm
 from train.train_tf import train_model as train_tf
 from models.lstm_model import LSTMStudentT
@@ -13,8 +12,17 @@ from losses.loss import nll_only
 from eval.evaluate import evaluate_model
 from utils.seeds import set_seed
 
+"""
+Main Experiment Pipeline
+
+- Runs training and evaluation for LSTM and Transformer models on gold and oil datasets
+- Uses probabilistic forecasting with Student-t output distributions
+- Saves trained models, evaluation metrics, and comparison results per commodity
+"""
+
+
 def run_experiment(data_path, model_class, train_fn, save_dir, model_tag, results_list):
-    print(f"\n🚀 Running: {save_dir}/{model_tag}")
+    print(f"\n Running: {save_dir}/{model_tag}")
 
     df = pd.read_csv(data_path, index_col=0, parse_dates=True).dropna()
     train_df, test_df = train_test_split(df, test_size=0.2, shuffle=False)
@@ -35,7 +43,7 @@ def run_experiment(data_path, model_class, train_fn, save_dir, model_tag, result
 
     if os.path.exists(model_save_path):
         model.load_state_dict(torch.load(model_save_path))
-        print(f"✅ Loaded model from {model_save_path}")
+        print(f" Loaded model from {model_save_path}")
     else:
         model = train_fn(
             train_loader=train_loader,

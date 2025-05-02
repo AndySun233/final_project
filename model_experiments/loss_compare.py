@@ -18,6 +18,15 @@ from train.train_lstm import train_model as train_lstm
 from train.train_tf import train_model as train_tf
 from utils.seeds import set_seed
 
+"""
+Ablation Study Pipeline
+
+- Trains Transformer models on gold and oil datasets under different loss functions
+- Evaluates each configuration using plain-text metrics (loss, DA, CI_95, RMSE)
+- Saves evaluation results for comparison across loss functions
+"""
+
+
 def run_ablation(data_path, save_dir, model_class, train_fn, loss_fn, model_tag, loss_tag, results_list):
     df = pd.read_csv(data_path, index_col=0, parse_dates=True).dropna()
     train_df, test_df = train_test_split(df, test_size=0.2, shuffle=False)
@@ -77,7 +86,7 @@ if __name__ == "__main__":
         os.makedirs(save_dir, exist_ok=True)
         results_list = []
         for loss_fn, loss_tag in ablations:
-            print(f"\n🚀 Running: {save_dir}/{model_tag} + {loss_tag}")
+            print(f"\n Running: {save_dir}/{model_tag} + {loss_tag}")
             run_ablation(
                 data_path=data_path,
                 save_dir=save_dir,
@@ -89,8 +98,7 @@ if __name__ == "__main__":
                 results_list=results_list
             )
 
-        # 保存
         output_file = os.path.join(save_dir, "loss_function_ablation.txt")
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n".join(results_list))
-        print(f"✅ 写入完成：{output_file}")
+        print(f" save to：{output_file}")

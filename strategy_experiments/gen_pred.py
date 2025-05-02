@@ -18,9 +18,8 @@ def read_yahoo_csv(path):
     )
 
 def save_model_predictions(data_path, model_path, market_data_path, save_csv_path, lookback=6, tag="gold"):
-    print(f"\n🚀 Running prediction extraction for {tag}")
+    print(f"\n Running prediction extraction for {tag}")
 
-    # === 1. 加载特征工程后的数据 ===
     df = pd.read_csv(data_path, index_col=0, parse_dates=True).dropna()
     test_len = int(len(df) * 0.2)
     train_df = df[:-test_len]
@@ -33,7 +32,6 @@ def save_model_predictions(data_path, model_path, market_data_path, save_csv_pat
 
     test_loader = DataLoader(ds_test, batch_size=128, shuffle=False)
 
-    # === 2. 加载模型 ===
     if "lstm" in tag.lower():
         model = LSTMStudentT(input_dim=ds_test.X.shape[2])
     elif "tf" in tag.lower():
@@ -44,12 +42,11 @@ def save_model_predictions(data_path, model_path, market_data_path, save_csv_pat
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    # === 3. 收集预测
     all_mu, all_sigma, all_nu = [], [], []
 
     with torch.no_grad():
         for batch in test_loader:
-            x, _ = batch  # 不用y_true了
+            x, _ = batch 
             mu, sigma, nu = model(x)
             all_mu.append(mu)
             all_sigma.append(sigma)
@@ -59,20 +56,15 @@ def save_model_predictions(data_path, model_path, market_data_path, save_csv_pat
     sigma = torch.cat(all_sigma, dim=0).detach().cpu().numpy()
     nu = torch.cat(all_nu, dim=0).detach().cpu().numpy()
 
-    # === 4. 匹配timestamp
-    timestamps = test_df.index[lookback:]  # 因为有lookback，所以丢了前面一段
+    timestamps = test_df.index[lookback:] 
     assert len(timestamps) == len(mu), "Timestamp and prediction length mismatch!"
 
-    # === 5. 加载市场数据，注意用read_yahoo_csv
     df_market = read_yahoo_csv(market_data_path)
 
-    # 去掉market数据的时区（非常重要）
     df_market.index = df_market.index.tz_localize(None)
 
-    # 计算ema_20
     df_market["ema_20"] = df_market["Close"].ewm(span=20, adjust=False).mean()
 
-    # === 6. 合并prediction和市场数据
     df_preds = pd.DataFrame({
         'timestamp': timestamps,
         'mu': mu.flatten(),
@@ -82,14 +74,12 @@ def save_model_predictions(data_path, model_path, market_data_path, save_csv_pat
 
     df_preds = pd.merge(df_preds, df_market, left_on="timestamp", right_index=True, how="inner")
 
-    # 最终列顺序
     df_preds = df_preds[["timestamp", "mu", "sigma", "nu", "Close", "ema_20"]]
 
-    # === 7. 保存
     os.makedirs(os.path.dirname(save_csv_path), exist_ok=True)
     df_preds.to_csv(save_csv_path, index=False)
 
-    print(f"✅ Final Prediction CSV (with close and ema_20) saved at {save_csv_path}")
+    print(f"Final Prediction CSV (with close and ema_20) saved at {save_csv_path}")
 
 if __name__ == "__main__":
     tasks = [

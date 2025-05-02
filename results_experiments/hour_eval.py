@@ -12,17 +12,24 @@ from utils.dataset import TimeSeriesDataset
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 
+"""
+Hourly Evaluation Runner
+
+- Performs intraday (hourly) evaluation of trained LSTM and Transformer models
+- Computes metrics: NLL, Directional Accuracy (DA), 95% Confidence Coverage, RMSE for each hour
+- Visualizes normalized metrics with trading session highlights (Asia, Europe, America)
+- Saves evaluation table and plots for gold and oil prediction models
+"""
+
+
 def evaluate_hourly(mu, sigma, nu, y_true, timestamps, y_mean, y_std):
-    """
-    按小时划分并评估 NLL, DA, 95% CR, RMSE
-    """
+
     mu_std = mu.detach().cpu().numpy()
     sigma_std = sigma.detach().cpu().numpy()
     nu_std = nu.detach().cpu().numpy()
     y_true_std = y_true.detach().cpu().numpy()
     timestamps = pd.to_datetime(timestamps)
 
-    # 反标准化
     mu = mu_std * y_std + y_mean
     sigma = sigma_std * y_std
     y_true = y_true_std * y_std + y_mean
@@ -61,26 +68,19 @@ def evaluate_hourly(mu, sigma, nu, y_true, timestamps, y_mean, y_std):
     return df
 
 def plot_hourly_metrics(df, save_dir, tag):
-    """
-    绘制一张图：
-    4条标准化曲线（NLL, DA, 95% CR, RMSE）+
-    正常时段填充背景色 +
-    交叠时段蓝绿/绿橙0.25小时交替块
-    """
+
     import matplotlib.pyplot as plt
     import numpy as np
     import os
 
     os.makedirs(save_dir, exist_ok=True)
 
-    # 标准化指标
     df_norm = df.copy()
     for col in ["NLL", "DA", "95% CR", "RMSE"]:
         df_norm[col] = df[col] / df[col].max()
 
     fig, ax = plt.subplots(figsize=(14, 6))
 
-    # 画4条标准化曲线
     ax.plot(df_norm["Hour"], df_norm["NLL"], marker='o', label="NLL")
     ax.plot(df_norm["Hour"], df_norm["DA"], marker='s', label="DA")
     ax.plot(df_norm["Hour"], df_norm["95% CR"], marker='^', label="95% CR")
@@ -93,7 +93,6 @@ def plot_hourly_metrics(df, save_dir, tag):
     ax.grid(True)
     ax.legend()
 
-    # 交易时段设置
     normal_sessions = [
         (0, 7, 'lightskyblue', "Asia"),
         (9, 12, 'palegreen', "Europe"),
@@ -107,15 +106,13 @@ def plot_hourly_metrics(df, save_dir, tag):
 
     ymin, ymax = ax.get_ylim()
 
-    # 画正常时段背景
     for start, end, color, label in normal_sessions:
         ax.axvspan(start, end, color=color, alpha=0.3)
 
-    # 画交叠时段交替块
     for start, end, color1, color2, label in overlap_sessions:
-        step = 0.25  # 每0.25小时切换一次
+        step = 0.25 
         current = start
-        toggle = True  # 交替颜色
+        toggle = True  
         while current < end:
             next_step = min(current + step, end)
             ax.axvspan(current, next_step,
@@ -124,7 +121,6 @@ def plot_hourly_metrics(df, save_dir, tag):
             toggle = not toggle
             current = next_step
 
-    # 标注市场名字
     session_labels = [
         (3.5, 'Asia', 'blue'),
         (10.5, 'Europe', 'green'),
@@ -142,13 +138,13 @@ def plot_hourly_metrics(df, save_dir, tag):
     save_path = os.path.join(save_dir, f"{tag.lower()}_hourly_eval_combined.png")
     plt.savefig(save_path, dpi=300)
     plt.close()
-    print(f"✅ Saved combined hourly plot to {save_path}")
+    print(f" Saved combined hourly plot to {save_path}")
 
 
 
 
 def run_hourly_analysis(data_path, model_path, lookback=6, tag="gold"):
-    print(f"\n🚀 Running hourly analysis for {tag}")
+    print(f"\n Running hourly analysis for {tag}")
 
     df = pd.read_csv(data_path, index_col=0, parse_dates=True).dropna()
     test_len = int(len(df) * 0.2)
@@ -162,7 +158,6 @@ def run_hourly_analysis(data_path, model_path, lookback=6, tag="gold"):
 
     test_loader = DataLoader(ds_test, batch_size=128, shuffle=False)
 
-    # 选择模型
     if "lstm" in tag.lower():
         model = LSTMStudentT(input_dim=ds_test.X.shape[2])
     elif "tf" in tag.lower():
@@ -173,7 +168,6 @@ def run_hourly_analysis(data_path, model_path, lookback=6, tag="gold"):
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    # 收集预测
     all_mu, all_sigma, all_nu, all_y, all_times = [], [], [], [], []
 
     with torch.no_grad():
@@ -194,22 +188,20 @@ def run_hourly_analysis(data_path, model_path, lookback=6, tag="gold"):
     y_true = torch.cat(all_y, dim=0)
     timestamps = pd.concat(all_times)
 
-    # 按小时评估
     df_hourly = evaluate_hourly(mu, sigma, nu, y_true, timestamps, 
                                 y_mean=ds_train.y_mean.item(), 
                                 y_std=ds_train.y_std.item())
 
-    print("\n📊 Hourly Evaluation Table:")
+    print("\n Hourly Evaluation Table:")
     print(df_hourly.round(4))
 
-    # 保存结果
     save_dir = os.path.join("results_experiments", "results", tag)
     os.makedirs(save_dir, exist_ok=True)
 
     df_hourly.to_csv(os.path.join(save_dir, "hourly_eval_metrics.csv"), index=False)
     plot_hourly_metrics(df_hourly, save_dir, tag)
 
-    print(f"✅ Saved hourly results to {save_dir}")
+    print(f" Saved hourly results to {save_dir}")
 
 if __name__ == "__main__":
     tasks = [

@@ -7,10 +7,7 @@ from scipy.stats import skew, kurtosis
 from data.build_dataset import read_yahoo_csv
 
 def compute_hourly_statistics(df, save_dir, tag):
-    """
-    输入：原始行情数据（含Datetime，Close等）
-    输出：每小时的 return 均值、方差、偏度、峰度、positive比例、negative比例、zero比例
-    """
+
     os.makedirs(save_dir, exist_ok=True)
 
     if not isinstance(df.index, pd.DatetimeIndex):
@@ -19,13 +16,10 @@ def compute_hourly_statistics(df, save_dir, tag):
     if 'Close' not in df.columns:
         raise ValueError("DataFrame must contain 'Close' column!")
 
-    # 计算简单收益率 (按Close收盘价)
     df['return'] = df['Close'].pct_change()
 
-    # 删除第一行NaN
     df = df.dropna()
 
-    # 提取小时
     df['Hour'] = df.index.hour
 
     grouped = df.groupby('Hour')['return']
@@ -46,7 +40,7 @@ def compute_hourly_statistics(df, save_dir, tag):
 
     save_path = os.path.join(save_dir, f"{tag}_hourly_stats.csv")
     stat_df.to_csv(save_path, index=False)
-    print(f"✅ Saved hourly stats to {save_path}")
+    print(f" Saved hourly stats to {save_path}")
 
     return stat_df
 

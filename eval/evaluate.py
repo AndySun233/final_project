@@ -9,13 +9,20 @@ from losses.loss import nll_only
 from contextlib import redirect_stdout
 from torch.distributions import StudentT
 
+"""
+Model Evaluation & Visualization Utilities
+
+- Evaluate probabilistic deep learning models on train/test sets
+- Compute metrics: NLL loss, directional accuracy, 95% confidence interval coverage, RMSE
+- Generate evaluation logs and prediction plots with confidence intervals
+- Outputs saved as text files and PNGs under a specified directory
+"""
+
+
 def evaluate_model(model, train_loader, test_loader,
                    y_mean, y_std,
                    train_df=None, test_df=None,
                    prefix="Model", save_dir="results", save_txt=True):
-    """
-    通用评估函数，评估训练集 + 测试集，输出 loss/RMSE/CI 并生成图和 txt 日志
-    """
     model.eval()
 
     os.makedirs(save_dir, exist_ok=True)
@@ -35,7 +42,6 @@ def evaluate_model(model, train_loader, test_loader,
                 np.concatenate(all_nu),
                 np.concatenate(all_y))
 
-    # === 内部函数：执行评估逻辑 ===
     def do_evaluation():
         mu_tr_raw, sig_tr_raw, nu_tr, y_tr_raw = collect_predictions(train_loader)
         mu_te_raw, sig_te_raw, nu_te, y_te_raw = collect_predictions(test_loader)
@@ -77,15 +83,13 @@ def evaluate_model(model, train_loader, test_loader,
     if save_txt:
         with open(log_path, "w", encoding="utf-8") as f:
             f.write(text)
-        print(f"📁 评估日志已保存至：{log_path}")
+        print(f"saved to：{log_path}")
     return text
 
 
 def visualize_predictions(mu, sigma, y_true,
                           timestamps=None, prefix="Model", tag="test", save_dir="results"):
-    """
-    绘图函数：均值+置信区间，保存到指定目录
-    """
+
     max_points = None
     if max_points:
         mu, sigma, y_true = mu[:max_points], sigma[:max_points], y_true[:max_points]
@@ -157,7 +161,7 @@ def evaluate_plaintext(model, dataloader_test, y_mean, y_std, loss_fn, tag, save
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         with open(save_path, "w", encoding="utf-8") as f:
             f.write(result_text.strip() + "\n")
-        print(f"✅ 结果已保存至 {save_path}")
+        print(f"save to {save_path}")
 
     return result_text.strip()
 
